@@ -16,9 +16,9 @@
       scan_min_range: 1.0
       scan_period: 0.1
       use_pcd_map: true
-      #map_path: "/home/shugo/pcd/5th_ex_outdoor.pcd"
+      map_path: "/home/keisoku/KUAMS/src/lidar_localization_ros2/pcd/5th_ex_outdoor.pcd"
       # map_path: "/home/shugo/pcd/20231208_edit.pcd"
-      map_path: "/home/keisoku/KUAMS/src/lidar_localization_ros2/pcd/rinpukan_0314.pcd"
+      # map_path: "/home/keisoku/KUAMS/src/lidar_localization_ros2/pcd/rinpukan_0314.pcd"
 
       set_initial_pose: true
 #5th_ex_indoor
@@ -31,24 +31,24 @@
       # initial_pose_qw: 0.387
 
 #5th_ex_outdoor
-      # initial_pose_x: -6.38
-      # initial_pose_y: 6.85
-      # initial_pose_z: 0.0
-      # initial_pose_qx: 0.0
-      # initial_pose_qy: 0.0
-      # initial_pose_qz: -0.397
-      # initial_pose_qw: 0.918
+      initial_pose_x: -6.38
+      initial_pose_y: 6.85
+      initial_pose_z: 0.0
+      initial_pose_qx: 0.0
+      initial_pose_qy: 0.0
+      initial_pose_qz: -0.397
+      initial_pose_qw: 0.918
 
 
 #rinpukan
-      initial_pose_x: 37.578
-      initial_pose_y: 6.369
-      initial_pose_z: 3.377
-      initial_pose_qx: 0.0
-      initial_pose_qy: 0.0
-      initial_pose_qz: 0.78021
-      initial_pose_qw: 0.625
-
+      #initial_pose_x: -98.61588287353516
+      #initial_pose_y: 17.72608757019043
+      #initial_pose_z: 0.9342350959777832
+      #initial_pose_qx: 0.04470644907008252
+      #initial_pose_qy: -0.017388773023127062
+      #initial_pose_qz: 0.2268249477610969
+      #initial_pose_qw: 0.9727535122572942  
+      
       use_odom: true
       use_imu: false
       enable_debug: false
