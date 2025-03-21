@@ -4,6 +4,8 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include <fstream>
+#include <sstream>
 
 #include <pcl/registration/ndt.h>
 #include <pcl/registration/gicp.h>
@@ -53,6 +55,7 @@ public:
   CallbackReturn on_error(const rclcpp_lifecycle::State & state);
 
   void initializeParameters();
+  void initializeResultCSV();
   void initializePubSub();
   void initializeRegistration();
   void initialPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
@@ -60,6 +63,16 @@ public:
   void odomReceived(const nav_msgs::msg::Odometry::ConstSharedPtr msg);
   void imuReceived(const sensor_msgs::msg::Imu::ConstSharedPtr msg);
   void cloudReceived(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg);
+  void writeResultCSVRow(int frame, 
+                         double align_time,
+                         double fitness_score,
+                         double pose_x,
+                         double pose_y,
+                         double pose_z,
+                         double rot_x,
+                         double rot_y,
+                         double rot_z,
+                         double rot_w);
   // void gnssReceived();
 
   tf2_ros::TransformBroadcaster broadcaster_;
@@ -121,6 +134,10 @@ public:
   double last_odom_received_time_;
   bool use_imu_{false};
   bool enable_debug_{false};
+
+  int frame_count_ = 0;
+  std::string result_csv_;
+  std::ofstream result_csv_file_;
 
   int ndt_num_threads_;
   int ndt_max_iterations_;
