@@ -2,7 +2,7 @@
     ros__parameters:
       registration_method: "NDT_OMP"
       score_threshold: 2.0
-      ndt_resolution: 1.0
+      ndt_resolution: 2.0
       ndt_step_size: 0.1
       ndt_num_threads: 4
       ndt_max_iterations: 35
@@ -12,19 +12,39 @@
       scan_min_range: 1.0
       scan_period: 0.1
       use_pcd_map: true
-      map_path: ""
+      map_path: "/home/kazuma/robomech_ws/data/ex_5th_raw_subsampled.pcd"
       set_initial_pose: true
-      initial_pose_x: 0.0
-      initial_pose_y: 0.0
-      initial_pose_z: 0.0
-      initial_pose_qx: 0.0
-      initial_pose_qy: 0.0
-      initial_pose_qz: 0.0
-      initial_pose_qw: 0.0
-      use_odom: false
+      # Course 1
+      # initial_pose_x: 0.19269657135009766
+      # initial_pose_y: -0.3394618034362793
+      # initial_pose_z: 0.0
+      # initial_pose_qx: 0.0
+      # initial_pose_qy: 0.0
+      # initial_pose_qz: 0.034992984242633265
+      # initial_pose_qw: 0.9993875579842861
+      
+      # Course 2
+      # initial_pose_x: 23.709997177124023
+      # initial_pose_y: 2.2386105060577393
+      # initial_pose_z: 0.6586490273475647
+      # initial_pose_qx: 0.019177897713078047
+      # initial_pose_qy: -0.0056874090600269635
+      # initial_pose_qz: 0.7210695366968725
+      # initial_pose_qw: 0.6925738982950018
+
+      # Course 3
+      initial_pose_x: -5.1982927322387695
+      initial_pose_y: -3.1561992168426514
+      initial_pose_z: 0.9376591444015503
+      initial_pose_qx: 0.019300119669853445
+      initial_pose_qy: 0.008515671166183854
+      initial_pose_qz: 0.9997774636492591
+      initial_pose_qw: 0.00012050027741239259
+      use_odom: true
       use_imu: false
       enable_debug: true
       enable_map_odom_tf: false
       global_frame_id: map
       odom_frame_id: odom
       base_frame_id: base_link
+      result_csv: "result_grid_large_course_3.csv"

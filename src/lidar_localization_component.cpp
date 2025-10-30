@@ -34,6 +34,7 @@ PCLLocalization::PCLLocalization(const rclcpp::NodeOptions & options)
   declare_parameter("use_odom", false);
   declare_parameter("use_imu", false);
   declare_parameter("enable_debug", false);
+  declare_parameter("result_csv", "result.csv");
 }
 
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
@@ -43,6 +44,7 @@ CallbackReturn PCLLocalization::on_configure(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_logger(), "Configuring");
 
   initializeParameters();
+  initializeResultCSV();
   initializePubSub();
   initializeRegistration();
 
@@ -200,6 +202,7 @@ void PCLLocalization::initializeParameters()
   get_parameter("use_odom", use_odom_);
   get_parameter("use_imu", use_imu_);
   get_parameter("enable_debug", enable_debug_);
+  get_parameter("result_csv", result_csv_);
 
   RCLCPP_INFO(get_logger(),"global_frame_id: %s", global_frame_id_.c_str());
   RCLCPP_INFO(get_logger(),"odom_frame_id: %s", odom_frame_id_.c_str());
@@ -220,6 +223,38 @@ void PCLLocalization::initializeParameters()
   RCLCPP_INFO(get_logger(),"use_odom: %d", use_odom_);
   RCLCPP_INFO(get_logger(),"use_imu: %d", use_imu_);
   RCLCPP_INFO(get_logger(),"enable_debug: %d", enable_debug_);
+  RCLCPP_INFO(get_logger(),"result_csv: %s", result_csv_.c_str());
+}
+
+void PCLLocalization::initializeResultCSV()
+{
+  result_csv_file_.open(result_csv_, std::ios::out | std::ios::trunc);
+  if (!result_csv_file_.is_open()) {
+    RCLCPP_ERROR(get_logger(), "Failed to open file: %s", result_csv_.c_str());
+    return;
+  }
+
+  result_csv_file_ << "frame,align_time,fitness_score,pose_x,pose_y,pose_z,rot_x,rot_y,rot_z,rot_w" << std::endl;
+}
+
+void PCLLocalization::writeResultCSVRow(int frame,
+                                          double align_time,
+                                          double fitness_score,
+                                          double pose_x,
+                                          double pose_y,
+                                          double pose_z,
+                                          double rot_x,
+                                          double rot_y,
+                                          double rot_z,
+                                          double rot_w)
+{
+  if (result_csv_file_.is_open()) {
+    result_csv_file_ << frame << "," << align_time << "," << fitness_score << ","
+                     << pose_x << "," << pose_y << "," << pose_z << ","
+                     << rot_x << "," << rot_y << "," << rot_z << "," << rot_w << std::endl;
+  } else {
+    RCLCPP_ERROR(get_logger(), "CSV file is not open for writing data.");
+  }
 }
 
 void PCLLocalization::initializePubSub()
@@ -443,6 +478,10 @@ void PCLLocalization::imuReceived(const sensor_msgs::msg::Imu::ConstSharedPtr ms
 
 void PCLLocalization::cloudReceived(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
 {
+  if (!msg) {
+    RCLCPP_WARN(get_logger(), "Null cloud message; ignoring.");
+    return;
+  }
   if (!map_recieved_ || !initialpose_recieved_) {return;}
   RCLCPP_INFO(get_logger(), "cloudReceived");
   pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZI>);
@@ -504,6 +543,7 @@ void PCLLocalization::cloudReceived(const sensor_msgs::msg::PointCloud2::ConstSh
   registration_->align(*output_cloud, init_guess);
   rclcpp::Time time_align_end = system_clock.now();
 
+  double align_time = time_align_end.seconds() - time_align_start.seconds();
   bool has_converged = registration_->hasConverged();
   double fitness_score = registration_->getFitnessScore();
   if (!has_converged) {
@@ -571,6 +611,39 @@ void PCLLocalization::cloudReceived(const sensor_msgs::msg::PointCloud2::ConstSh
   path_pub_->publish(*path_ptr_);
 
   last_scan_ptr_ = msg;
+
+  // --- CSV に記録するための各値の取得 ---
+  double pose_x = corrent_pose_with_cov_stamped_ptr_->pose.pose.position.x;
+  double pose_y = corrent_pose_with_cov_stamped_ptr_->pose.pose.position.y;
+  double pose_z = corrent_pose_with_cov_stamped_ptr_->pose.pose.position.z;
+  double rot_x = corrent_pose_with_cov_stamped_ptr_->pose.pose.orientation.x;
+  double rot_y = corrent_pose_with_cov_stamped_ptr_->pose.pose.orientation.y;
+  double rot_z = corrent_pose_with_cov_stamped_ptr_->pose.pose.orientation.z;
+  double rot_w = corrent_pose_with_cov_stamped_ptr_->pose.pose.orientation.w;
+
+  // 処理フレーム番号を決定
+  int frame = frame_count_;
+
+  // fitness_score の計算（NDT_OMP の場合は calculateScore() を利用）
+  double fitness_score_ndt_omp = 0.0;
+  if (registration_method_ == "NDT_OMP") {
+    auto ndt_omp_ptr = boost::dynamic_pointer_cast<pclomp::NormalDistributionsTransform<pcl::PointXYZI, pcl::PointXYZI>>(registration_);
+    if (ndt_omp_ptr) {
+      fitness_score_ndt_omp = ndt_omp_ptr->calculateScore(*output_cloud);
+    } else {
+      fitness_score_ndt_omp = registration_->getFitnessScore();
+    }
+  } else {
+    fitness_score_ndt_omp = registration_->getFitnessScore();
+  }
+
+  // CSV に行を書き込む
+  writeResultCSVRow(frame, align_time, fitness_score_ndt_omp,
+                    pose_x, pose_y, pose_z,
+                    rot_x, rot_y, rot_z, rot_w);
+        
+
+  frame_count_++;  
 
   if (enable_debug_) {
     std::cout << "number of filtered cloud points: " << filtered_cloud_ptr->size() << std::endl;
